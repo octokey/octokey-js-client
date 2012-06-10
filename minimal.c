@@ -4,7 +4,6 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
-#include <openssl/dsa.h>
 #include <openssl/evp.h>
 
 #define PRIVATE_KEY_FILENAME "/Users/martin/.ssh/test_rsa_key"
@@ -105,46 +104,6 @@ void ssh_rsa_sign(const EVP_PKEY *key, unsigned char *sig_r, unsigned int *len_r
 }
 
 
-void ssh_dss_sign(const EVP_PKEY *key, unsigned char *sig_r, unsigned int *len_r, const unsigned char *data, unsigned int datalen) {
-    DSA_SIG *sig;
-    EVP_MD_CTX md;
-    unsigned char digest[EVP_MAX_MD_SIZE], sigblob[SIGBLOB_LEN];
-    unsigned int dlen;
-    int i;
-
-    EVP_DigestInit(&md, EVP_sha1());
-    EVP_DigestUpdate(&md, data, datalen);
-    EVP_DigestFinal(&md, digest, &dlen);
-    fprintf(stderr, "datalen = %u, dlen = %d\ndigest =", datalen, dlen);
-    for (i=0; i<dlen; i++) fprintf(stderr, " %02x", digest[i]);
-    fprintf(stderr, "\n");
-
-    sig = DSA_do_sign(digest, dlen, EVP_PKEY_get1_DSA(key));
-    if (sig == NULL) {
-        fprintf(stderr, "ssh_dss_sign: sign failed\n");
-        return;
-    }
-
-    unsigned int rlen = BN_num_bytes(sig->r);
-    unsigned int slen = BN_num_bytes(sig->s);
-    if (rlen > INTBLOB_LEN || slen > INTBLOB_LEN) {
-        fprintf(stderr, "bad sig size %u %u", rlen, slen);
-        DSA_SIG_free(sig);
-        return;
-    }
-    memset(sigblob, 0, SIGBLOB_LEN);
-    BN_bn2bin(sig->r, sigblob + SIGBLOB_LEN - INTBLOB_LEN - rlen);
-    BN_bn2bin(sig->s, sigblob + SIGBLOB_LEN - slen);
-    DSA_SIG_free(sig);
-    fprintf(stderr, "rlen = %u, slen = %u\nsigblob =", rlen, slen);
-    for (i=0; i<SIGBLOB_LEN; i++) fprintf(stderr, " %02x", sigblob[i]);
-    fprintf(stderr, "\n");
-
-    *len_r = append_string(sig_r, "ssh-dss", 12);
-    *len_r += append_bytes(sig_r + (*len_r), sigblob, SIGBLOB_LEN);
-}
-
-
 int main(int argc, char **argv) {
     FILE *keyfile = fopen(PRIVATE_KEY_FILENAME, "r");
     if (!keyfile) {
@@ -172,23 +131,8 @@ int main(int argc, char **argv) {
         if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
         blob_len += append_bignum(key_blob + blob_len, rsa->n, MAX_KEY_BLOB_SIZE - blob_len);
         if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
-
-    } else if (key->type == EVP_PKEY_DSA) {
-        DSA *dsa = EVP_PKEY_get1_DSA(key);
-        algorithm_name = "ssh-dss";
-        blob_len += append_string(key_blob + blob_len, algorithm_name, MAX_KEY_BLOB_SIZE - blob_len);
-        if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
-        blob_len += append_bignum(key_blob + blob_len, dsa->p, MAX_KEY_BLOB_SIZE - blob_len);
-        if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
-        blob_len += append_bignum(key_blob + blob_len, dsa->q, MAX_KEY_BLOB_SIZE - blob_len);
-        if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
-        blob_len += append_bignum(key_blob + blob_len, dsa->g, MAX_KEY_BLOB_SIZE - blob_len);
-        if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
-        blob_len += append_bignum(key_blob + blob_len, dsa->pub_key, MAX_KEY_BLOB_SIZE - blob_len);
-        if (blob_len >= MAX_KEY_BLOB_SIZE) return 1;
-
     } else {
-        fprintf(stderr, "unknown private key type\n");
+        fprintf(stderr, "Sorry, only RSA keys are supported.\n");
         return 1;
     }
 
@@ -215,11 +159,7 @@ int main(int argc, char **argv) {
     unsigned char signature[MAX_SIGNATURE_SIZE];
     unsigned int sig_len;
 
-    if (key->type == EVP_PKEY_RSA) {
-        ssh_rsa_sign(key, signature, &sig_len, authdata, auth_len);
-    } else if (key->type == EVP_PKEY_DSA) {
-        ssh_dss_sign(key, signature, &sig_len, authdata, auth_len);
-    }
+    ssh_rsa_sign(key, signature, &sig_len, authdata, auth_len);
     auth_len += append_bytes(authdata + auth_len, signature, sig_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
 
