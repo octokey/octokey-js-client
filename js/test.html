@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<head>
+    <script src="forge/util.js" type="text/javascript"></script>
+    <script src="forge/oids.js" type="text/javascript"></script>
+    <script src="forge/asn1.js" type="text/javascript"></script>
+    <script src="forge/jsbn.js" type="text/javascript"></script>
+    <script src="forge/rsa.js" type="text/javascript"></script>
+    <script src="forge/sha1.js" type="text/javascript"></script>
+    <script src="forge/pki.js" type="text/javascript"></script>
+    <script src="lib/jquery-1.7.2.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+        // Appends an RFC4251 binary "string" type to a byte buffer.
+        function appendString(buf, str) {
+            buf.putInt32(str.length);
+            buf.putBytes(str);
+        }
+
+        // Appends a RFC4251 "mpint" type to a buffer. That's a multi-precision int,
+        // not a multi-pint, I'm afraid.
+        function appendBignum(buf, value) {
+            var hex = value.toString(16);
+            // The MSB of the first byte is interpreted as a sign bit. Our numbers are
+            // always positive, therefore if that bit is set, we need to insert a zero
+            // byte to make sure the number is interpreted correctly.
+            if (hex[0] >= '8') {
+                hex = '00' + hex;
+            }
+            appendString(buf, forge.util.hexToBytes(hex));
+        }
+
+        // Extracts the public key, in RFC4253 format, from a private key object.
+        function publicKey(private_key) {
+            var buf = new forge.util.ByteBuffer();
+            appendString(buf, 'ssh-rsa');
+            appendBignum(buf, private_key.e);
+            appendBignum(buf, private_key.n);
+            return buf.data;
+        }
+
+        // Byte buffer to be signed for a pubkey SSH_MSG_USERAUTH_REQUEST, as
+        // described in RFC4252.
+        function userAuthRequest(username, sessionid, pubkey) {
+            var buf = new forge.util.ByteBuffer();
+            appendString(buf, sessionid);        // unguessable opaque string set by the server
+            buf.putByte(50);                     // SSH_MSG_USERAUTH_REQUEST
+            appendString(buf, forge.util.encodeUtf8(username)); // user name for login
+            appendString(buf, "ssh-connection"); // service name
+            appendString(buf, "publickey");      // authentication method
+            buf.putByte(1);                      // is a signature included? yes!
+            appendString(buf, "ssh-rsa");        // signing algorithm name
+            appendString(buf, pubkey);           // public key corresponding to the signing key
+            return buf.data;
+        }
+
+        // RSASSA-PKCS1-v1_5 (PKCS #1 v2.0 signature) with SHA1, as defined in RFC3447,
+        // and used in SSH as described in RFC4253.
+        function signAuthRequest(request, private_key) {
+            var digest = forge.md.sha1.create();
+            digest.update(request);
+            var buf = new forge.util.ByteBuffer();
+            appendString(buf, 'ssh-rsa');
+            appendString(buf, private_key.sign(digest));
+            return buf.data;
+        }
+
+        function prettyHex(buffer) {
+            var offset = 0;
+            return $.map(buffer.toHex().split(/([0-9a-f]{32})/), function (line) {
+                if (line) {
+                    line = line.replace(/([0-9a-f]{4})/g, '$1 ');
+                    var off = offset.toString(16) + ': ';
+                    while (off.length < 9) off = '0' + off;
+                    offset += 16;
+                    return off + line.trimRight();
+                }
+            }).join("\n");
+        }
+
+        $(function () {
+            var private_key = forge.pki.privateKeyFromPem($('#privatekey').val());
+            var sessionid = forge.util.hexToBytes($('#sessionid').val());
+
+            var request = userAuthRequest($('#username').val(), sessionid, publicKey(private_key));
+            var signature = signAuthRequest(request, private_key);
+
+            var authrequest = new forge.util.ByteBuffer(request);
+            appendString(authrequest, signature);
+            $('#authrequest').val(prettyHex(authrequest));
+        });
+    </script>
+
+    <style type="text/css">
+        textarea { width: 600px; height: 150px; }
+        input[type=text] { width: 600px; }
+    </style>
+</head>
+
+<body>
+    <h1>SSH pubkey authentication test</h1>
+    <form>
+        <p>
+        <label for="username">Username (UTF-8):</label><br>
+        <input type="text" id="username" name="username" value="martin">
+        </p>
+
+        <p>
+        <label for="sessionid">Session ID (hex):</label><br>
+        <input type="text" id="sessionid" name="sessionid" value="2969b93cc402dd4612158ff180b8a61ef2e12dcb88770459a039b851f1000ced">
+        </p>
+
+        <p>
+        <label for="privatekey">Private key (PEM):</label><br>
+        <textarea id="privatekey" name="privatekey">-----BEGIN RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEArCQG213utzqE5YVjTVF5exGRCkE9OuM7LCp/FOuPdoHrFUXk
+y2MQcwf29J3A4i8zxpES9RdSEU6iIEsow98wIi0x1/Lnfx6jG5Y0/iQsG1NRlNCC
+aydGvGaC+PwwWiwYRc7PtBgV4KOAVXMZdMB5nFRaekQ1ksdH/360KCGgljPtzTNl
+09e97QBwHFIZ3ea5Eih/HireTrRSnvF+ywmwuxX4ubDr0ZeSceuF2S5WLXH2+TV0
+LUb2YxFy3wHDM4ZfwBB5U9xZhkIbzSL19M7x8LeEG3HuDDnwEfU93yOYq9l3zunC
+aEG4NtiJ2pHYnN6TKIQonm60pVm9fnRvsbrOJwIDAQABAoIBAFJmUG3zcdB9j536
+ksUxCfCSQRZikje9C9chZIGUHLFCkVA2i8Wb3wThPCJt3SWoKKWVTjjJ9/vW4x6I
+O7Q/AuBpN+HCIXQlKziKV0WL9R0DbhrJEJTQUTjf7TPYLCEN2HSaAayYluhX+5dr
+qDTN6aiebEz4l5hyEhHICd7n8eHToq0WWXLgOESOR+MRNfawSvnqg6WHQTRivvxQ
+8EXYRq1EHMF4NLKdeqsGT9FZs4PuA5GrjvwXwtcO33naUJR1H46GePfjzw5Nqde2
+CV50jPFuSYs68TTA4Yg+sPDbXcbO5KzGzYa17HjZSmGMHeO5dg+dwpwtLcbIbgKB
+sufxg2ECgYEA1nfvuZl0TVcC1G59+x03n9mjdWzcEjFHgvITrffbocL1IoNAQD5X
+qSDUhIfvmuCnJkDVeObqcraKkMcSMDo4UzJoMvB9ZZfGskeMzLy7Qii0jHylyVcy
+8R8HluA7xHRaNkbR2WYvODkuQlDbzee8LkfHe2xbjYcK2oVIVx/itTECgYEAzXm7
+pIPAz1ipJwofOFYbZeC+DM0m4xCfLJjmCV7AP3IerqeJE50W87eXxPlUK4ygc1n5
+br0+hGsCZQmdtJaht7AigW8TIo8nkBfOPy7OrdTDsRPavSEvQcoufk2xF4v+GwJQ
+5mR/1vdgG5AWpjanRYqSod6WY4e4+TouLoH+QtcCgYBLU3ClNVp913Os/OnOiuKA
+iEY69fMNiLVfLnru/UDsvbavWn30knDjfB5oNf5X3VOXwem4PxJVG/vrAaBHxAsI
+XYnvajwAtKAa+bpgJmF2ySkwto7b+n5v5cAao8MaKuuMaK9HtfYbvymaLSAmX5/e
+eWN83AAD40xSl8FiqFZN4QKBgFXqX75zZMyOKvRq9BDvWDdqGK1rnqX1DklsiUtD
+tikRQ6kN3nA4EB/KFYjEJCCthW2WIojeUmS2BeNPeQTIs0gGOvdaBWs+5nEGszOS
+E9N1knnZbm4EkSj2LCidvb21yINsnX0oapftCd+ciQvo8FpQje1nEAT//CUh4auK
+qVEzAoGADfMjOQ5OjbflVAfr6Lnnf/OoO5bx9L4/3wtjCblIzSTHYP02CyEZttz5
+NHvZxbqm58MVqr8SaqUHd/+kYXdMVkMkkGaq/nG5HrM4GlurKIcfhTA3NjB8Z8hr
+3KaJuGF5ME05PbYVidQrv1VXp0NJBZ3CtRs1OO5YDlM3hLS6hm4=
+-----END RSA PRIVATE KEY-----
+</textarea>
+        </p>
+
+        <p>
+        <label for="signature">Authentication request (hex):</label><br>
+        <textarea id="authrequest" name="authrequest"></textarea>
+        </p>
+    </form>
+</body>
