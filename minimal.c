@@ -8,7 +8,8 @@
 
 #define PRIVATE_KEY_FILENAME "/Users/martin/.ssh/test_rsa_key"
 #define USERNAME "martin"
-#define SESSIONID "\xe6\x2e\x9f\x82\x17\x22\xfa\x95\x6e\xd8\x99\x7d\xb9\x55\x7d\x1c\xc0\x5a\x4d\x51\x34\x07\xc4\xb5\x8a\x6c\xa9\x6e\x7e\xc6\xaa\x4f"
+#define SESSIONID "\x29\x69\xb9\x3c\xc4\x02\xdd\x46\x12\x15\x8f\xf1\x80\xb8\xa6\x1e\xf2\xe1\x2d\xcb\x88\x77\x04\x59\xa0\x39\xb8\x51\xf1\x00\x0c\xed"
+#define SESSIONID_LEN 32
 
 #define MAX_KEY_FILE_SIZE 10240
 #define MAX_KEY_BLOB_SIZE 10240
@@ -139,7 +140,7 @@ int main(int argc, char **argv) {
     unsigned char authdata[MAX_AUTHDATA_SIZE];
     int auth_len = 0;
 
-    auth_len += append_string(authdata + auth_len, SESSIONID, MAX_AUTHDATA_SIZE - auth_len);
+    auth_len += append_bytes(authdata + auth_len, SESSIONID, SESSIONID_LEN);
     if (auth_len + 1 >= MAX_AUTHDATA_SIZE) return 1;
     authdata[auth_len] = 50; // SSH_MSG_USERAUTH_REQUEST
     auth_len++;
