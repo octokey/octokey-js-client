@@ -15,7 +15,7 @@
             var auth = octokey.auth({
                 private_key_pem: $('#privatekey').val(),
                 challenge: forge.util.hexToBytes($('#challenge').val()),
-                username: forge.util.encodeUtf8($('#username').val()),
+                username: forge.util.encodeUtf8($('#username').val())
             });
 
             $('#publickey').val(auth.public_key_base64);
