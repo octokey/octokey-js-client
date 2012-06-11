@@ -39,7 +39,7 @@ octokey.auth = function (params) {
     // described in RFC4252.
     function userAuthRequest() {
         var buf = new forge.util.ByteBuffer();
-        appendString(buf, params.session_id); // unguessable opaque string set by the server
+        appendString(buf, params.challenge);  // unguessable opaque string set by the server
         buf.putByte(50);                      // SSH_MSG_USERAUTH_REQUEST
         appendString(buf, params.username);   // user name for login
         appendString(buf, "ssh-connection");  // service name
@@ -82,8 +82,8 @@ octokey.auth = function (params) {
         public_key_base64: forge.util.encode64(public_key) // this is what you find in ~/.ssh/id_rsa.pub
     };
 
-    // If a session_id and username were given, generate a signed auth request using those details.
-    if (params.session_id && params.username) {
+    // If a challenge and username were given, generate a signed auth request using those details.
+    if (params.challenge && params.username) {
         var request = userAuthRequest();
         var signature = signAuthRequest(request);
         var auth_request = new forge.util.ByteBuffer(request);

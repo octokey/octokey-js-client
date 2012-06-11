@@ -14,7 +14,7 @@
         $(function () {
             var auth = octokey.auth({
                 private_key_pem: $('#privatekey').val(),
-                session_id: forge.util.hexToBytes($('#sessionid').val()),
+                challenge: forge.util.hexToBytes($('#challenge').val()),
                 username: forge.util.encodeUtf8($('#username').val()),
             });
 
@@ -38,8 +38,8 @@
         </p>
 
         <p>
-        <label for="sessionid">Session ID (hex):</label><br>
-        <input type="text" id="sessionid" name="sessionid" value="2969b93cc402dd4612158ff180b8a61ef2e12dcb88770459a039b851f1000ced">
+        <label for="challenge">Challenge (hex):</label><br>
+        <input type="text" id="challenge" name="challenge" value="2969b93cc402dd4612158ff180b8a61ef2e12dcb88770459a039b851f1000ced">
         </p>
 
         <p>
