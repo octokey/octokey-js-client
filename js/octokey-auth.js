@@ -1,22 +1,10 @@
-/*jslint onevar: false*/
 var octokey = octokey || {};
-// params is an object containing {
-//
-// private_key_pem:  The private key in PEM format,
-// username:  The username to authenticate as,
-// challenge:  The challenge from the server.
-//
-// }
-octokey.auth = function (params) {
 
-    if (!params.private_key_pem) {
-        throw "no private_key_pem given";
-    }
+octokey.privateKey = function (raw_private_key) {
 
-    var private_key = forge.pki.privateKeyFromPem(params.private_key_pem),
-        service_name = params.service_name || 'octokey-auth',
-        public_key,
-        output;
+    var _public = {},
+        private_key = forge.pki.privateKeyFromPem(raw_private_key),
+        service_name = "octokey-auth";
 
     // Appends an RFC4251 binary "string" type to a byte buffer.
     function appendString(buf, str) {
@@ -48,7 +36,7 @@ octokey.auth = function (params) {
 
     // Byte buffer to be signed for a pubkey SSH_MSG_USERAUTH_REQUEST, as
     // described in RFC4252.
-    function userAuthRequest() {
+    function userAuthRequest(params) {
         var buf = new forge.util.ByteBuffer();
         appendString(buf, params.challenge);  // unguessable opaque string set by the server
         buf.putByte(50);                      // SSH_MSG_USERAUTH_REQUEST
@@ -57,16 +45,17 @@ octokey.auth = function (params) {
         appendString(buf, "publickey");       // authentication method
         buf.putByte(1);                       // is a signature included? yes!
         appendString(buf, "ssh-rsa");         // signing algorithm name
-        appendString(buf, public_key);        // public key corresponding to the signing key
+        appendString(buf, _public.publicKey());        // public key corresponding to the signing key
         return buf.data;
     }
 
     // RSASSA-PKCS1-v1_5 (PKCS #1 v2.0 signature) with SHA1, as defined in RFC3447,
     // and used in SSH as described in RFC4253.
     function signAuthRequest(request) {
-        var digest = forge.md.sha1.create();
+        var digest = forge.md.sha1.create(),
+            buf = new forge.util.ByteBuffer();
+
         digest.update(request);
-        var buf = new forge.util.ByteBuffer();
         appendString(buf, 'ssh-rsa');
         appendString(buf, private_key.sign(digest));
         return buf.data;
@@ -88,24 +77,34 @@ octokey.auth = function (params) {
         }).join("\n");
     }
 
-    // In any case, return the public key that we extracted out of private_key_pem.
-    public_key = publicKey();
-    output = {
-        public_key: public_key,
-        public_key_base64: forge.util.encode64(public_key) // this is what you find in ~/.ssh/id_rsa.pub
+    _public.publicKey = function () {
+        var buf = new forge.util.ByteBuffer();
+        appendString(buf, 'ssh-rsa');
+        appendBignum(buf, private_key.e);
+        appendBignum(buf, private_key.n);
+        return buf.data;
     };
 
-    // If a challenge and username were given, generate a signed auth request using those details.
-    if (params.challenge && params.username) {
-        var request = userAuthRequest();
-        var signature = signAuthRequest(request);
-        var auth_request = new forge.util.ByteBuffer(request);
+    _public.publicKey64 = function () {
+        return forge.util.encode64(_public.publicKey());
+    };
+
+    _public.authRequest = function (params) {
+        var request = userAuthRequest(params),
+            signature = signAuthRequest(request),
+            auth_request = new forge.util.ByteBuffer(request);
+
         appendString(auth_request, signature);
+        return auth_request;
+    };
 
-        output.auth_request = auth_request;
-        output.auth_request_base64 = forge.util.encode64(auth_request.data);
-        output.auth_request_pretty = prettyHex(auth_request);
-    }
+    _public.authRequest64 = function (params) {
+        return forge.util.encode64(_public.authRequest(params).data);
+    };
 
-    return output;
+    _public.authRequestPretty = function (params) {
+        return prettyHex(_public.authRequest(params));
+    };
+
+    return _public;
 };

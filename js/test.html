@@ -12,14 +12,14 @@
 
     <script type="text/javascript">
         $(function () {
-            var auth = octokey.auth({
-                private_key_pem: $('#privatekey').val(),
+            var private_key = octokey.privateKey($('#privatekey').val());
+                private_key_pem:
+
+            $('#publickey').val(private_key.publicKey64());
+            $('#authrequest').val(private_key.authRequest64({
                 challenge: forge.util.hexToBytes($('#challenge').val()),
                 username: forge.util.encodeUtf8($('#username').val())
-            });
-
-            $('#publickey').val(auth.public_key_base64);
-            $('#authrequest').val(auth.auth_request_base64);
+            }));
         });
     </script>
 
