@@ -79,9 +79,11 @@
 
         $(function () {
             var private_key = forge.pki.privateKeyFromPem($('#privatekey').val());
+            var public_key = publicKey(private_key);
             var sessionid = forge.util.hexToBytes($('#sessionid').val());
+            $('#publickey').val(forge.util.encode64(public_key));
 
-            var request = userAuthRequest($('#username').val(), sessionid, publicKey(private_key));
+            var request = userAuthRequest($('#username').val(), sessionid, public_key);
             var signature = signAuthRequest(request, private_key);
 
             var authrequest = new forge.util.ByteBuffer(request);
@@ -139,6 +141,11 @@ NHvZxbqm58MVqr8SaqUHd/+kYXdMVkMkkGaq/nG5HrM4GlurKIcfhTA3NjB8Z8hr
 3KaJuGF5ME05PbYVidQrv1VXp0NJBZ3CtRs1OO5YDlM3hLS6hm4=
 -----END RSA PRIVATE KEY-----
 </textarea>
+        </p>
+
+        <p>
+        <label for="publickey">Public key (RFC4253):</label><br>
+        <textarea id="publickey" name="publickey"></textarea>
         </p>
 
         <p>
