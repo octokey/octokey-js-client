@@ -1,0 +1,2 @@
+/*global chrome, jQuery, $, console, localStorage*/
+/*jslint nomen: false*/
