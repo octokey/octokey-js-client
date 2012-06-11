@@ -1,0 +1,29 @@
+<!DOCTYPE HTML>
+<head>
+    <title>Octokey</title>
+    <script src="/js/lib/jquery-1.7.2.js" type="text/javascript"></script>
+    <script src="/page_action/index.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/page_action/style.css" type="text/css"/>
+</head>
+
+<body>
+    <div class="first-use" style="display: none">
+        Hi, you haven't yet added a private key to this browser.
+
+        <ol>
+          <li>Open a command line</li>
+          <li><code>ssh-keygen -t rsa -b 2048 -N '' -f /tmp/new_private_key</code><br/>
+              <code>cat /tmp/new_private_key &amp;&amp; rm /tmp/new_private_key</code></li>
+          <li>Copy and paste the output into the box below.</li>
+        </ol>
+
+        <form class="private-key-form" action="#">
+            <textarea class="private-key" cols="64" rows="28"></textarea><br/>
+            <input type="submit" value="Save">
+        </form>
+    </div>
+
+    <div class="public-keys" style="display: none">
+        woot! you added a private key!
+    </div>
+</body>

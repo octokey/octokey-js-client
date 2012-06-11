@@ -1,0 +1,20 @@
+{
+  "name": "Octokey",
+  "version": "0.1",
+  "description": "Secure key-based authentication for the web.",
+  "permissions": ["<all_urls>"],
+  "page_action": {
+    "default_icon": "images/cartoon_octopus.png",
+    "default_title": "Octokey!",
+    "default_popup": "page_action/index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/lib/jquery-1.7.2.js", "content_script.js"]
+    }
+  ],
+  "background": {
+    "scripts": ["js/lib/jquery-1.7.2.js", "js/lib/jquery.absolutify.js", "background_page.js"]
+  }
+}
