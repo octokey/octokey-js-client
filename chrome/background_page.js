@@ -5,12 +5,16 @@ function challengeCache() {
 
     _public.fetch = function (url) {
         if (!cache[url]) {
-            cache[url] = jQuery.getJSON(url).then(function (response) {
-                return response.challenge;
-            });
+            cache[url] = _public.get(url);
         }
+    };
 
-        return cache[url];
+    _public.get = function (url) {
+        var ret = cache[url] || jQuery.getJSON(url).then(function (response) {
+            return response.challenge;
+        });
+        delete cache[url];
+        return ret;
     };
 
     return _public;
@@ -45,13 +49,17 @@ function actionHandler(request, sender, sendResponse) {
     };
 
     _public.create_auth_request = function () {
-        challenge_cache.fetch(challengeUrl()).then(function (challenge) {
-            sendResponse({
-                auth_request: privateKey().authRequest64({
-                    username: request.username,
-                    challenge: challenge
-                })
-            });
+        challenge_cache.get(challengeUrl()).then(function (challenge) {
+            try {
+                sendResponse({
+                    auth_request: privateKey().authRequest64({
+                        username: request.username,
+                        challenge: challenge
+                    })
+                });
+            } catch (e) {
+                sendResponse({error: e.toString()});
+            }
         });
     };
 
@@ -59,6 +67,20 @@ function actionHandler(request, sender, sendResponse) {
         sendResponse({
             public_key: privateKey().publicKey()
         });
+    };
+
+    _public.set_private_key = function () {
+
+        try {
+            octokey.privateKey(request.private_key);
+        } catch (e) {
+            sendResponse({error: e.toString()});
+            return;
+        }
+
+        localStorage['private-key'] = request.private_key;
+
+        sendResponse({ok: true});
     };
 
     return _public;
