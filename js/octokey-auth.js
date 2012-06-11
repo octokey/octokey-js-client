@@ -1,12 +1,22 @@
+/*jslint onevar: false*/
 var octokey = octokey || {};
+// params is an object containing {
+//
+// private_key_pem:  The private key in PEM format,
+// username:  The username to authenticate as,
+// challenge:  The challenge from the server.
+//
+// }
 octokey.auth = function (params) {
 
     if (!params.private_key_pem) {
-        throw("no private_key_pem given");
+        throw "no private_key_pem given";
     }
 
-    var private_key = forge.pki.privateKeyFromPem(params.private_key_pem);
-    var service_name = params.service_name || 'octokey-auth';
+    var private_key = forge.pki.privateKeyFromPem(params.private_key_pem),
+        service_name = params.service_name || 'octokey-auth',
+        public_key,
+        output;
 
     // Appends an RFC4251 binary "string" type to a byte buffer.
     function appendString(buf, str) {
@@ -69,7 +79,9 @@ octokey.auth = function (params) {
             if (line) {
                 line = line.replace(/([0-9a-f]{4})/g, '$1 ');
                 var off = offset.toString(16) + ': ';
-                while (off.length < 9) off = '0' + off;
+                while (off.length < 9) {
+                    off = '0' + off;
+                }
                 offset += 16;
                 return off + line.trimRight();
             }
@@ -77,8 +89,8 @@ octokey.auth = function (params) {
     }
 
     // In any case, return the public key that we extracted out of private_key_pem.
-    var public_key = publicKey();
-    var output = {
+    public_key = publicKey();
+    output = {
         public_key: public_key,
         public_key_base64: forge.util.encode64(public_key) // this is what you find in ~/.ssh/id_rsa.pub
     };

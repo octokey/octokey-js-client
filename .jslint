@@ -1,2 +1,2 @@
-/*global chrome, jQuery, $, console, localStorage*/
+/*global chrome, jQuery, $, console, localStorage, forge*/
 /*jslint nomen: false*/
