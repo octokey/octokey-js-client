@@ -6,6 +6,7 @@ octokey.auth = function (params) {
     }
 
     var private_key = forge.pki.privateKeyFromPem(params.private_key_pem);
+    var service_name = params.service_name || 'octokey-auth';
 
     // Appends an RFC4251 binary "string" type to a byte buffer.
     function appendString(buf, str) {
@@ -42,7 +43,7 @@ octokey.auth = function (params) {
         appendString(buf, params.challenge);  // unguessable opaque string set by the server
         buf.putByte(50);                      // SSH_MSG_USERAUTH_REQUEST
         appendString(buf, params.username);   // user name for login
-        appendString(buf, "ssh-connection");  // service name
+        appendString(buf, service_name);      // service name
         appendString(buf, "publickey");       // authentication method
         buf.putByte(1);                       // is a signature included? yes!
         appendString(buf, "ssh-rsa");         // signing algorithm name
