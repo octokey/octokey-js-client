@@ -90,7 +90,7 @@ octokey.auth = function (params) {
         appendString(auth_request, signature);
 
         output.auth_request = auth_request;
-        output.auth_request_base64 = forge.util.encode64(auth_request);
+        output.auth_request_base64 = forge.util.encode64(auth_request.data);
         output.auth_request_pretty = prettyHex(auth_request);
     }
 

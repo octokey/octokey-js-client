@@ -19,7 +19,7 @@
             });
 
             $('#publickey').val(auth.public_key_base64);
-            $('#authrequest').val(auth.auth_request_pretty);
+            $('#authrequest').val(auth.auth_request_base64);
         });
     </script>
 
@@ -80,7 +80,7 @@ NHvZxbqm58MVqr8SaqUHd/+kYXdMVkMkkGaq/nG5HrM4GlurKIcfhTA3NjB8Z8hr
         </p>
 
         <p>
-        <label for="signature">Authentication request (hex):</label><br>
+        <label for="signature">Authentication request (base64):</label><br>
         <textarea id="authrequest" name="authrequest"></textarea>
         </p>
     </form>
