@@ -18,6 +18,7 @@
             $('#publickey').val(private_key.publicKey64());
             $('#authrequest').val(private_key.authRequest64({
                 challenge: forge.util.hexToBytes($('#challenge').val()),
+                request_url: forge.util.encodeUtf8($('#request_url').val()),
                 username: forge.util.encodeUtf8($('#username').val())
             }));
         });
@@ -34,12 +35,17 @@
     <form>
         <p>
         <label for="username">Username (UTF-8):</label><br>
-        <input type="text" id="username" name="username" value="martin">
+        <input type="text" id="username" name="username" value="alfred@test.linkedin.com">
         </p>
 
         <p>
         <label for="challenge">Challenge (hex):</label><br>
         <input type="text" id="challenge" name="challenge" value="2969b93cc402dd4612158ff180b8a61ef2e12dcb88770459a039b851f1000ced">
+        </p>
+
+        <p>
+        <label for="request_url">Request URL:</label><br>
+        <input type="text" id="request_url" name="request_url" value="https://eat1-app45.corp.linkedin.com:8443/uas/login-submit">
         </p>
 
         <p>

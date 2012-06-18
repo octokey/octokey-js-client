@@ -8,6 +8,7 @@
 
 #define PRIVATE_KEY_FILENAME "/Users/martin/.ssh/test_rsa_key"
 #define USERNAME "martin"
+#define REQUEST_URL "https://www.example.com/login"
 #define SESSIONID "\x29\x69\xb9\x3c\xc4\x02\xdd\x46\x12\x15\x8f\xf1\x80\xb8\xa6\x1e\xf2\xe1\x2d\xcb\x88\x77\x04\x59\xa0\x39\xb8\x51\xf1\x00\x0c\xed"
 #define SESSIONID_LEN 32
 
@@ -141,17 +142,15 @@ int main(int argc, char **argv) {
     int auth_len = 0;
 
     auth_len += append_bytes(authdata + auth_len, SESSIONID, SESSIONID_LEN);
-    if (auth_len + 1 >= MAX_AUTHDATA_SIZE) return 1;
-    authdata[auth_len] = 50; // SSH_MSG_USERAUTH_REQUEST
-    auth_len++;
+    if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
+    auth_len += append_string(authdata + auth_len, REQUEST_URL, MAX_AUTHDATA_SIZE - auth_len);
+    if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_string(authdata + auth_len, USERNAME, MAX_AUTHDATA_SIZE - auth_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_string(authdata + auth_len, "ssh-connection", MAX_AUTHDATA_SIZE - auth_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_string(authdata + auth_len, "publickey", MAX_AUTHDATA_SIZE - auth_len);
-    if (auth_len + 1 >= MAX_AUTHDATA_SIZE) return 1;
-    authdata[auth_len] = 1; // true, i.e. a signature is included
-    auth_len++;
+    if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_string(authdata + auth_len, algorithm_name, MAX_AUTHDATA_SIZE - auth_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_bytes(authdata + auth_len, key_blob, blob_len);

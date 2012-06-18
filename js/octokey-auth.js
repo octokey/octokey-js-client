@@ -39,11 +39,10 @@ octokey.privateKey = function (raw_private_key) {
     function userAuthRequest(params) {
         var buf = new forge.util.ByteBuffer();
         appendString(buf, params.challenge);  // unguessable opaque string set by the server
-        buf.putByte(50);                      // SSH_MSG_USERAUTH_REQUEST
+        appendString(buf, params.request_url);// URL of the login endpoint for which the request is intended
         appendString(buf, params.username);   // user name for login
         appendString(buf, service_name);      // service name
         appendString(buf, "publickey");       // authentication method
-        buf.putByte(1);                       // is a signature included? yes!
         appendString(buf, "ssh-rsa");         // signing algorithm name
         appendString(buf, _public.publicKey());        // public key corresponding to the signing key
         return buf.data;

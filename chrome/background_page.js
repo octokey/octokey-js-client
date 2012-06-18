@@ -54,7 +54,8 @@ function actionHandler(request, sender, sendResponse) {
             sendResponse({
                 auth_request: privateKey().authRequest64({
                     username: request.username,
-                    challenge: challenge
+                    challenge: challenge,
+                    request_url: sender.tab.url
                 })
             });
         } catch (e) {
