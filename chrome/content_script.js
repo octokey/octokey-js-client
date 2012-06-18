@@ -52,6 +52,7 @@
                             'margin-left': '-175px',
                             padding: '50px',
                             'border-radius': '10px',
+                            'background-color': 'white',
                             'box-shadow': '0 0 20px rgba(0, 0, 0, 0.2)'
                         }),
                             mask = $('<div/>').css({
