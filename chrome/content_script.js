@@ -25,12 +25,10 @@
                     auth_request = form.find('input[name=session_password]');
 
                 if (!username.val()) {
-                    alert('bye');
                     return;
                 }
 
                 if (auth_request.val()) {
-                    alert('q');
                     return;
                 }
 
