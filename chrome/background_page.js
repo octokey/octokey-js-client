@@ -10,11 +10,11 @@ function challengeCache() {
     };
 
     _public.get = function (url) {
-        return {
-            then: function (cb) {
-                cb("DOO");
-            }
-        };
+        var ret = cache[url] || jQuery.get(url).then(function (response) {
+            return response;
+        });
+        delete cache[url];
+        return ret;
     };
 
     return _public;
@@ -30,10 +30,11 @@ function actionHandler(request, sender, sendResponse) {
     var _public = {};
 
     function challengeUrl() {
-        return jQuery.absolutify(request.challenge_url, {
-            relative_to: sender.tab.url,
-            enforce_same_origin: true
-        });
+        return "https://octokey.herokuapp.com/challenge";
+        // return jQuery.absolutify(request.challenge_url, {
+        //     relative_to: sender.tab.url,
+        //     enforce_same_origin: true
+        // });
     }
 
     function privateKey() {
@@ -52,29 +53,31 @@ function actionHandler(request, sender, sendResponse) {
     };
 
     _public.create_auth_request = function () {
-        var challenge = "FOO",
-            // random 5-digit number.
-            handshake_id = Math.floor(Math.random() * 90000) + 10000,
-            to_sign = {
-                username: request.username,
-                challenge: challenge,
-                request_url: sender.tab.url
-            };
+        challenge_cache.get(challengeUrl()).then(function (challenge) {
 
-        try {
-            if (request.username === 'bruce@test.linkedin.com') {
-                jQuery.post("https://octokey.herokuapp.com/local/" + handshake_id, to_sign);
-                sendResponse({
-                    handshake_id: handshake_id
-                });
-            } else {
-                sendResponse({
-                    auth_request: privateKey().authRequest64(to_sign)
-                });
+            // random 5-digit number.
+            var handshake_id = Math.floor(Math.random() * 90000) + 10000,
+                to_sign = {
+                    username: request.username,
+                    challenge: challenge,
+                    request_url: sender.tab.url
+                };
+
+            try {
+                if (request.username === 'bruce@test.linkedin.com') {
+                    jQuery.post("https://octokey.herokuapp.com/local/" + handshake_id, to_sign);
+                    sendResponse({
+                        handshake_id: handshake_id
+                    });
+                } else {
+                    sendResponse({
+                        auth_request: privateKey().authRequest64(to_sign)
+                    });
+                }
+            } catch (e) {
+                sendResponse({error: e.toString()});
             }
-        } catch (e) {
-            sendResponse({error: e.toString()});
-        }
+        });
     };
 
     _public.await_handshake = function () {
