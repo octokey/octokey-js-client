@@ -11,7 +11,7 @@
         });
     }
 
-    var octokey_forms = jQuery('form.octokey');
+    var octokey_forms = jQuery('form.ajax-form');
 
     if (octokey_forms.length) {
         sendRequest({message: 'show_page_action'});
@@ -20,14 +20,17 @@
             var form = $(this),
                 challenge_url = form.find('.octokey-challenge-url').val();
 
-            form.append('<input type="hidden" class="octokey-auth-request" name="octokey-auth-request"/>');
-            sendRequest({message: 'fetch_challenge',
-                                          challenge_url: challenge_url});
-            this.addEventListener('submit', function (e) {
-                var username  = form.find('.octokey-username').val(),
-                    auth_request = form.find('.octokey-auth-request').val();
+            form.find('input[name=session_key]').change(function (e) {
+                var username  = form.find('input[name=session_key]'),
+                    auth_request = form.find('input[name=session_password]');
 
-                if (auth_request) {
+                if (!username.val()) {
+                    alert('bye');
+                    return;
+                }
+
+                if (auth_request.val()) {
+                    alert('q');
                     return;
                 }
 
@@ -36,13 +39,13 @@
 
                 sendRequest({
                     message: 'create_auth_request',
-                    username: username,
+                    username: username.val(),
                     challenge_url: challenge_url
                 }, function (response) {
-                    form.find('.octokey-auth-request').val(response.auth_request);
-                    form.submit();
+                    auth_request.val(response.auth_request);
+//                    form.submit();
                 });
-            }, true);
+            });
         });
     }
 }());

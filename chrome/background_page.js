@@ -10,11 +10,11 @@ function challengeCache() {
     };
 
     _public.get = function (url) {
-        var ret = cache[url] || jQuery.getJSON(url).then(function (response) {
-            return response.challenge;
-        });
-        delete cache[url];
-        return ret;
+        return {
+            then: function (cb) {
+                cb("DOO");
+            }
+        };
     };
 
     return _public;
@@ -49,18 +49,17 @@ function actionHandler(request, sender, sendResponse) {
     };
 
     _public.create_auth_request = function () {
-        challenge_cache.get(challengeUrl()).then(function (challenge) {
-            try {
-                sendResponse({
-                    auth_request: privateKey().authRequest64({
-                        username: request.username,
-                        challenge: challenge
-                    })
-                });
-            } catch (e) {
-                sendResponse({error: e.toString()});
-            }
-        });
+        var challenge = "FOO";
+        try {
+            sendResponse({
+                auth_request: privateKey().authRequest64({
+                    username: request.username,
+                    challenge: challenge
+                })
+            });
+        } catch (e) {
+            sendResponse({error: e.toString()});
+        }
     };
 
     _public.public_key = function () {
