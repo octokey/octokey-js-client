@@ -64,13 +64,9 @@ function actionHandler(request, sender, sendResponse) {
         try {
             if (request.username === 'bruce@test.linkedin.com') {
                 jQuery.post("https://octokey.herokuapp.com/local/" + handshake_id, to_sign);
-                channel.bind(handshake_id, function (data) {
-                    channel.unbind(handshake_id);
-                    sendResponse({
-                        auth_request: data.auth_request
-                    });
+                sendResponse({
+                    handshake_id: handshake_id
                 });
-                alert(handshake_id);
             } else {
                 sendResponse({
                     auth_request: privateKey().authRequest64(to_sign)
@@ -79,6 +75,15 @@ function actionHandler(request, sender, sendResponse) {
         } catch (e) {
             sendResponse({error: e.toString()});
         }
+    };
+
+    _public.await_handshake = function () {
+        channel.bind(request.handshake_id, function (data) {
+            channel.unbind(request.handshake_id);
+            sendResponse({
+                auth_request: data.auth_request
+            });
+        });
     };
 
     _public.public_key = function () {

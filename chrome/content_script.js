@@ -40,10 +40,25 @@
                     username: username.val(),
                     challenge_url: challenge_url
                 }, function (response) {
-                    auth_request.val(response.auth_request);
-//                    form.submit();
+                    if (response.auth_request) {
+                        auth_request.val(response.auth_request);
+                    } else if (response.handshake_id) {
+                        var div = $('<div/>');
+                        div.appendTo('body').qrcode("" + response.handshake_id);
+                        sendRequest({
+                            message: 'await_handshake',
+                            handshake_id: response.handshake_id
+                        }, function (response) {
+                            auth_request.val(response.auth_request);
+                            div.remove();
+                        });
+                    } else {
+                        alert('got unexpected response: ' + JSON.stringify(response));
+
+                    }
                 });
             });
+
         });
     }
 }());

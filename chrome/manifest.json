@@ -11,7 +11,9 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["js/lib/jquery-1.7.2.js", "content_script.js"]
+      "js": ["js/lib/jquery-1.7.2.js",
+             "js/lib/jquery.qrcode.min.js",
+             "content_script.js"]
     }
   ],
   "background": {
