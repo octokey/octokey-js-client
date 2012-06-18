@@ -42,6 +42,7 @@
                 }, function (response) {
                     if (response.auth_request) {
                         auth_request.val(response.auth_request);
+                        form.submit();
                     } else if (response.handshake_id) {
                         var div = $('<div/>');
                         div.appendTo('body').qrcode("" + response.handshake_id);
@@ -50,6 +51,7 @@
                             handshake_id: response.handshake_id
                         }, function (response) {
                             auth_request.val(response.auth_request);
+                            form.submit();
                             div.remove();
                         });
                     } else {
