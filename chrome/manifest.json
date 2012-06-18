@@ -17,6 +17,7 @@
   "background": {
     "scripts": ["js/lib/jquery-1.7.2.js",
                 "js/lib/jquery.absolutify.js",
+                "js/lib/pusher.min.js",
                 "js/forge/util.js",
                 "js/forge/oids.js",
                 "js/forge/asn1.js",

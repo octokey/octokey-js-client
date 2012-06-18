@@ -1,4 +1,4 @@
-/*global alert*/
+/*global alert, Pusher*/
 function challengeCache() {
     var _public = {},
         cache = {};
@@ -21,6 +21,9 @@ function challengeCache() {
 }
 
 var challenge_cache = challengeCache();
+
+var pusher = new Pusher("427a8908c6541ab6f357");
+var channel = pusher.subscribe('remote-response');
 
 function actionHandler(request, sender, sendResponse) {
 
@@ -49,15 +52,30 @@ function actionHandler(request, sender, sendResponse) {
     };
 
     _public.create_auth_request = function () {
-        var challenge = "FOO";
+        var challenge = "FOO",
+            // random 5-digit number.
+            handshake_id = Math.floor(Math.random() * 90000) + 10000,
+            to_sign = {
+                username: request.username,
+                challenge: challenge,
+                request_url: sender.tab.url
+            };
+
         try {
-            sendResponse({
-                auth_request: privateKey().authRequest64({
-                    username: request.username,
-                    challenge: challenge,
-                    request_url: sender.tab.url
-                })
-            });
+            if (request.username === 'bruce@test.linkedin.com') {
+                jQuery.post("http://192.168.1.4:9292/local/" + handshake_id, to_sign);
+                channel.bind(handshake_id, function (data) {
+                    channel.unbind(handshake_id);
+                    sendResponse({
+                        auth_request: data.auth_request
+                    });
+                });
+                alert(handshake_id);
+            } else {
+                sendResponse({
+                    auth_request: privateKey().authRequest64(to_sign)
+                });
+            }
         } catch (e) {
             sendResponse({error: e.toString()});
         }
