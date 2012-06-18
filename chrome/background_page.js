@@ -63,7 +63,7 @@ function actionHandler(request, sender, sendResponse) {
 
         try {
             if (request.username === 'bruce@test.linkedin.com') {
-                jQuery.post("http://192.168.1.4:9292/local/" + handshake_id, to_sign);
+                jQuery.post("https://octokey.herokuapp.com/local/" + handshake_id, to_sign);
                 channel.bind(handshake_id, function (data) {
                     channel.unbind(handshake_id);
                     sendResponse({
