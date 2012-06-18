@@ -1,3 +1,5 @@
+/* build with: gcc -lssl -lcrypto -o minimal minimal.c */
+
 #include <stdio.h>
 #include <string.h>
 #include <openssl/bn.h>
