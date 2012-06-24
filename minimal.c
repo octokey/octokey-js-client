@@ -8,11 +8,12 @@
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
 
-#define PRIVATE_KEY_FILENAME "/Users/martin/.ssh/test_rsa_key"
-#define USERNAME "martin"
-#define REQUEST_URL "https://www.example.com/login"
+#define PRIVATE_KEY_FILENAME "/tmp/octokey.private"
+#define USERNAME "alfred@test.linkedin.com"
+#define REQUEST_URL "https://eat1-app45.corp.linkedin.com:8443/uas/login-submit"
 #define SESSIONID "\x29\x69\xb9\x3c\xc4\x02\xdd\x46\x12\x15\x8f\xf1\x80\xb8\xa6\x1e\xf2\xe1\x2d\xcb\x88\x77\x04\x59\xa0\x39\xb8\x51\xf1\x00\x0c\xed"
 #define SESSIONID_LEN 32
+#define SERVICE_NAME "octokey-auth"
 
 #define MAX_KEY_FILE_SIZE 10240
 #define MAX_KEY_BLOB_SIZE 10240
@@ -22,6 +23,19 @@
 #define INTBLOB_LEN 20
 #define SIGBLOB_LEN (2*INTBLOB_LEN)
 
+size_t strlcpy(unsigned char *dst, const unsigned char *src, size_t maxlen) {
+    size_t len = strlen(src);
+    size_t to_copy = len;
+
+    if (len >= maxlen - 1) {
+        to_copy = maxlen - 1;
+    }
+
+    strncpy(dst, src, to_copy);
+    dst[to_copy + 1] = '\0';
+
+    return len;
+}
 
 /* 32 bits, network byte order */
 void put_u32(unsigned char *buf, unsigned int value) {
@@ -149,7 +163,7 @@ int main(int argc, char **argv) {
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_string(authdata + auth_len, USERNAME, MAX_AUTHDATA_SIZE - auth_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
-    auth_len += append_string(authdata + auth_len, "ssh-connection", MAX_AUTHDATA_SIZE - auth_len);
+    auth_len += append_string(authdata + auth_len, SERVICE_NAME, MAX_AUTHDATA_SIZE - auth_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
     auth_len += append_string(authdata + auth_len, "publickey", MAX_AUTHDATA_SIZE - auth_len);
     if (auth_len >= MAX_AUTHDATA_SIZE) return 1;
