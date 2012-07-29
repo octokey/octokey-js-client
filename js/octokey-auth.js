@@ -42,7 +42,11 @@ octokey.privateKey = function (raw_private_key) {
                 var decrypt = cipher.algorithm.startDecrypting(key, init_vector);
                 decrypt.update(data);
                 decrypt.finish();
-                return forge.pki.privateKeyFromAsn1(forge.asn1.fromDer(decrypt.output));
+                try {
+                    return forge.pki.privateKeyFromAsn1(forge.asn1.fromDer(decrypt.output));
+                } catch(error) {
+                    return false;
+                }
             };
 
         } else {
