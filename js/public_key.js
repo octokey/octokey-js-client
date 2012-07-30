@@ -1,6 +1,8 @@
 var octokey = octokey || {};
 
-/* Encapsulates a SSH RSA public key */
+/* Encapsulates a SSH RSA public key, given two bignums:
+ *  - e, the RSA public exponent
+ *  - n, the RSA modulus */
 octokey.publicKey = function (e, n) {
     var _public = {};
 
