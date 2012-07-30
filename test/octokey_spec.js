@@ -44,7 +44,8 @@ describe('octokey.privateKey', function () {
         });
 
         it('should extract the public key from the private key', function () {
-            expect(private_key.publicKey64()).toBe([
+            expect(private_key.publicKey().toBase64()).toBe([
+                'ssh-rsa ',
                 'AAAAB3NzaC1yc2EAAAADAQABAAABAQCsJAbbXe63OoTlhWNNUXl7EZEKQT064zssKn8U64',
                 '92gesVReTLYxBzB/b0ncDiLzPGkRL1F1IRTqIgSyjD3zAiLTHX8ud/HqMbljT+JCwbU1GU',
                 '0IJrJ0a8ZoL4/DBaLBhFzs+0GBXgo4BVcxl0wHmcVFp6RDWSx0f/frQoIaCWM+3NM2XT17',
@@ -56,11 +57,13 @@ describe('octokey.privateKey', function () {
 
         // TODO more granular tests
         it('should sign an auth request', function () {
-            expect(private_key.authRequest64({
+            var auth_request = octokey.authRequest({
                 challenge: forge.util.decode64('KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0='),
                 request_url: 'https://www.example.com/login',
                 username: 'foo'
-            })).toBe([
+            });
+            auth_request.sign(private_key);
+            expect(auth_request.toBase64()).toBe([
                 'AAAAIClpuTzEAt1GEhWP8YC4ph7y4S3LiHcEWaA5uFHxAAztAAAAHWh0dHBzOi8vd3d3Lm',
                 'V4YW1wbGUuY29tL2xvZ2luAAAAA2ZvbwAAAAxvY3Rva2V5LWF1dGgAAAAJcHVibGlja2V5',
                 'AAAAB3NzaC1yc2EAAAEXAAAAB3NzaC1yc2EAAAADAQABAAABAQCsJAbbXe63OoTlhWNNUX',
@@ -156,7 +159,8 @@ describe('octokey.privateKey', function () {
             });
 
             it('should extract the public key from the private key', function () {
-                expect(private_key.publicKey64()).toBe([
+                expect(private_key.publicKey().toBase64()).toBe([
+                    'ssh-rsa ',
                     'AAAAB3NzaC1yc2EAAAADAQABAAABAQC8wjLP42FK43SOaSwTPwsnVXX97WtnSSuIPtN00q',
                     'j62nbaPyrfIOwiWqb4FIrsAoa97uJgYovDZcTkBKTzpwLj1rKpQva3elwxFfQcpz4T3jDX',
                     '+DxODLF36BQSf2QoAsNUTdP12tiDJOgK2Qqp//+6iZUHtgM/csZckDpMv0uzNn+do4LFm7',
@@ -167,11 +171,13 @@ describe('octokey.privateKey', function () {
             });
 
             it('should sign an auth request', function () {
-                expect(private_key.authRequest64({
+                var auth_request = octokey.authRequest({
                     challenge: forge.util.decode64('KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0='),
                     request_url: 'https://www.example.com/login',
                     username: 'foo'
-                })).toBe([
+                });
+                auth_request.sign(private_key);
+                expect(auth_request.toBase64()).toBe([
                     'AAAAIClpuTzEAt1GEhWP8YC4ph7y4S3LiHcEWaA5uFHxAAztAAAAHWh0dHBzOi8vd3d3Lm',
                     'V4YW1wbGUuY29tL2xvZ2luAAAAA2ZvbwAAAAxvY3Rva2V5LWF1dGgAAAAJcHVibGlja2V5',
                     'AAAAB3NzaC1yc2EAAAEXAAAAB3NzaC1yc2EAAAADAQABAAABAQC8wjLP42FK43SOaSwTPw',

@@ -12,19 +12,25 @@
     <script src="forge/pbkdf2.js" type="text/javascript"></script>
     <script src="forge/pki.js" type="text/javascript"></script>
     <script src="lib/jquery-1.7.2.js" type="text/javascript"></script>
-    <script src="octokey-auth.js" type="text/javascript"></script>
+    <script src="buffer.js" type="text/javascript"></script>
+    <script src="public_key.js" type="text/javascript"></script>
+    <script src="private_key.js" type="text/javascript"></script>
+    <script src="auth_request.js" type="text/javascript"></script>
 
     <script type="text/javascript">
         $(function () {
             var private_key = octokey.privateKey($('#privatekey').val());
             private_key.setPassphrase($('#passphrase').val());
 
-            $('#publickey').val(private_key.publicKey64());
-            $('#authrequest').val(private_key.authRequest64({
+            $('#publickey').val(private_key.publicKey().toBase64());
+
+            var auth_request = octokey.authRequest({
                 challenge: forge.util.hexToBytes($('#challenge').val()),
                 request_url: forge.util.encodeUtf8($('#request_url').val()),
                 username: forge.util.encodeUtf8($('#username').val())
-            }));
+            });
+            auth_request.sign(private_key);
+            $('#authrequest').val(auth_request.toBase64());
         });
     </script>
 
