@@ -58,7 +58,7 @@ describe('octokey.privateKey', function () {
         // TODO more granular tests
         it('should sign an auth request', function () {
             var auth_request = octokey.authRequest({
-                challenge: forge.util.decode64('KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0='),
+                challenge: 'KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0=',
                 request_url: 'https://www.example.com/login',
                 username: 'foo'
             });
@@ -172,7 +172,7 @@ describe('octokey.privateKey', function () {
 
             it('should sign an auth request', function () {
                 var auth_request = octokey.authRequest({
-                    challenge: forge.util.decode64('KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0='),
+                    challenge: 'KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0=',
                     request_url: 'https://www.example.com/login',
                     username: 'foo'
                 });
