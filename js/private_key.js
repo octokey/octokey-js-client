@@ -33,6 +33,7 @@ octokey.privateKey = function (raw_private_key) {
 
             decrypt_key = function (passphrase) {
                 // The following algorithm for deriving the key is hard-coded in OpenSSL
+                // in EVP_BytesToKey (crypto/evp/evp_key.c) and PEM_do_header (crypto/pem/pem_lib.c)
                 var key = new forge.util.ByteBuffer(), digest = '';
                 while (key.length() < cipher.key_length) {
                     var md = forge.md.md5.create();
