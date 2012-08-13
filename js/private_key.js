@@ -23,8 +23,8 @@ octokey.privateKey = function (raw_private_key) {
         if (cipher_info) {
             var init_vector = forge.util.hexToBytes(cipher_info[2]);
             var cipher = {
-                // TODO more ciphers
-                'AES-128-CBC': {algorithm: forge.aes, key_len: 16}
+                'AES-128-CBC':  {algorithm: forge.aes, key_length: 16},
+                'DES-EDE3-CBC': {algorithm: forge.des, key_length: 24}
             }[cipher_info[1]];
 
             if (!cipher) {
@@ -33,12 +33,17 @@ octokey.privateKey = function (raw_private_key) {
 
             decrypt_key = function (passphrase) {
                 // The following algorithm for deriving the key is hard-coded in OpenSSL
-                var md = forge.md.md5.create();
-                md.update(passphrase, 'utf-8');
-                md.update(init_vector.substr(0, 8)); // the first PKCS5_SALT_LEN (8) bytes of IV are used as salt
-                var key = md.digest().getBytes(cipher.key_len);
+                var key = new forge.util.ByteBuffer(), digest = '';
+                while (key.length() < cipher.key_length) {
+                    var md = forge.md.md5.create();
+                    md.update(digest);
+                    md.update(passphrase, 'utf-8');
+                    md.update(init_vector.substr(0, 8)); // the first PKCS5_SALT_LEN (8) bytes of IV are used as salt
+                    digest = md.digest().getBytes();
+                    key.putBytes(digest.substr(0, cipher.key_length - key.length()));
+                }
 
-                var decrypt = cipher.algorithm.startDecrypting(key, init_vector);
+                var decrypt = cipher.algorithm.startDecrypting(key, forge.util.createBuffer(init_vector));
                 decrypt.update(data);
                 decrypt.finish();
                 try {

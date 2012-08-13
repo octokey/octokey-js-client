@@ -206,4 +206,81 @@ describe('octokey.privateKey', function () {
             });
         });
     });
+
+
+    describe('with a 3DES-encrypted SSH private key', function () {
+        var private_key, private_key_pem = [
+            '-----BEGIN RSA PRIVATE KEY-----',
+            'Proc-Type: 4,ENCRYPTED',
+            'DEK-Info: DES-EDE3-CBC,6A9DD947BF7E78D3',
+            '',
+            'dWy+96hq8lZR5u+p9Xzbza6Znfd9yLaGKyPgLYpXCZKE6CQg26157bgZDaMb3YiI',
+            'wUvwbjunKEED8ZZiZ3AEJgWQ6iNmmYxF2K30HdM/sLzYKXOVCQ46qd6WY5jvFepT',
+            'l+G0r7S0pc1Q8xzBkMMOEmYQ9LK/Yz8fUSIhiwnsfwx8I1wE8JveXs8c4F6qTqgq',
+            'J1PFbaxj7Q8zvI7DjngOxw75TbnyVuC6CJUMxalgsCgXojfRyG9hULcTCRFpC2t0',
+            'EKfTK7ZEjlKNmb9c8XIsL07uzcgZs/DsV/qXlUDJTLMIQormFtoG9SilpxsmFgt0',
+            'MxLV7oiFBafQakCzzSMoVgEHRP3vLpptKtl38IoOMYXyYSLAJzPK0a1524kl9cBh',
+            'RwNTCggy913ScTdKYC933fpI/ferzp/XFOB94TvWeD+w8s+jSd0GfNf8na/BUffg',
+            '6/IZdvfL/LeVpxtm6CgDFTHPeQPj97GuBCYJQELqmuW0unPPeiifKiec1BVWbySy',
+            '7eknhzQZve4UI+Lpmb3CLsq8xNI70iomL2x40GU0LHTf4UCRORmPBK2qgaeKL3p5',
+            'iDHkUFdEIcaUWV5p5zpuBI7nbGzWeMVspS8H+X8j5nMudDPb8RkvGAK5nECcbWoJ',
+            '9qeITbRcT+o6HczMRbFvyGbcpdeeV74a/KVB4D3X1bC7dpnGCq06z9lcdghvhhh7',
+            'rg6Ar6s6UXb9NbxDA2WlhffZaPkfcUi6A9k8/y58xWb6Db6IIMl1nN1ESlfkeDrl',
+            'bRrc/UHcBLwusFl54my8y+UxUDL5nb5xq6AXs+3Glb31Tn0GvaZsmWYig0/R4bxs',
+            'eJi3BqD57p+QDcv3tBmoDhHdPkvMra7CfoDqLMnTNXKs6jyP5Us6TpNaieEc/pb/',
+            '4bdrVTsHhrERbGQWFl4cr+8f34WM4PXOtC/Nax5+8YvuXdIcBhGOEt+yNG+rVBh2',
+            'SfIBaD/jOmbKAtOGgNB1ydLcuMZf/8kdNK9s1Jn8l8bM6z0BmlXRl7GghnjRD34c',
+            'zWVEGMI2+wnnkgidSw2h89dduShdf3TYUjiAI/fwJLvHcG/u8fZC/ItrHRqw9+dX',
+            'QVH7++NyLJSb6vI/eIme8fPBBb69WcoSWLbw2t/89YGVpzdI4+wRTjy9ZzFWuRf8',
+            'ciXv/nLa0t0fOHE6wSb576/5zw46XLaFfaadk3RrgMb6OajMva4D8UbMxJQwL6Pg',
+            'B35pCy1KxWXm6rCs4A/P7idp3JW2ok4+U4cQwS1rB7NS8zN+mStpcHstn8NE2icd',
+            'APMkT/I08MN5atIDa5ZlETIhnzQKk2WvTa1fHOtX6ydxTyOwXtnToVtWeiJjToVy',
+            'zIQDSEyV5uw4THm+XGF4zCFLVVmH+3zdlGIJdtEXxCK65adbmqhcMupdwZ70h3At',
+            'zlUQzlkhBtRvvI2nIiL6A33yLAMj8k9Mno0mHiRzPmKeIpsZh5s4FXwBxsX3Iw0r',
+            'SijPzvxC39CZwoA6n0l44VdGyyYA85YX7C8jl1x2h727ARy+YHPSvKXNIvFuXn0y',
+            'T8iwMHBhGhFIlp8rglmMEV0pIcsD72EKf3LpksE0MokHItVI15sYauai/E+jH0iz',
+            '-----END RSA PRIVATE KEY-----'
+        ].join('\n');
+
+        beforeEach(function () {
+            private_key = octokey.privateKey(private_key_pem);
+            private_key.setPassphrase('password');
+        });
+
+        it('should extract the public key from the private key', function () {
+            expect(private_key.publicKey().toBase64()).toBe([
+                'ssh-rsa ',
+                'AAAAB3NzaC1yc2EAAAABIwAAAQEA1G2bhyMFM0iSgtkNEiKP2dpfaOq26rV7SKFYi54FzQ',
+                'HNCrKfFPhxxpvcLOc8ib3ILrypWLww/qfb9e0b09xyqCD3hnV9nWFshrNrXiDBmkpf3fi0',
+                'cJvAWfk+cbfvX1engV/87nKHzNGomWcZ+uH7+cILmZscZo3ia26shGPf6gXvd9jys7UR+2',
+                'Dmkwk07QDuM6+xreAy2uZB9dApaD6Spesu9Zna8a64hb/mokES3rgEPkoU+CMnzdoDhTSn',
+                'v9FB5e6B873ZTDRpU1KGfg9Jw8k6TxA3k1pp0ZIPdytmSU3t5+qzY56O7vUAqYPGUIGJZQ',
+                'xkdUQycYu3yCCg5t9kbQ=='
+            ].join(''));
+        });
+
+        it('should sign an auth request', function () {
+            var auth_request = octokey.authRequest({
+                challenge: 'KWm5PMQC3UYSFY/xgLimHvLhLcuIdwRZoDm4UfEADO0=',
+                request_url: 'https://www.example.com/login',
+                username: 'foo'
+            });
+            auth_request.sign(private_key);
+            expect(auth_request.toBase64()).toBe([
+                'AAAAIClpuTzEAt1GEhWP8YC4ph7y4S3LiHcEWaA5uFHxAAztAAAAHWh0dHBzOi8vd3d3Lm',
+                'V4YW1wbGUuY29tL2xvZ2luAAAAA2ZvbwAAAAxvY3Rva2V5LWF1dGgAAAAJcHVibGlja2V5',
+                'AAAAB3NzaC1yc2EAAAEVAAAAB3NzaC1yc2EAAAABIwAAAQEA1G2bhyMFM0iSgtkNEiKP2d',
+                'pfaOq26rV7SKFYi54FzQHNCrKfFPhxxpvcLOc8ib3ILrypWLww/qfb9e0b09xyqCD3hnV9',
+                'nWFshrNrXiDBmkpf3fi0cJvAWfk+cbfvX1engV/87nKHzNGomWcZ+uH7+cILmZscZo3ia2',
+                '6shGPf6gXvd9jys7UR+2Dmkwk07QDuM6+xreAy2uZB9dApaD6Spesu9Zna8a64hb/mokES',
+                '3rgEPkoU+CMnzdoDhTSnv9FB5e6B873ZTDRpU1KGfg9Jw8k6TxA3k1pp0ZIPdytmSU3t5+',
+                'qzY56O7vUAqYPGUIGJZQxkdUQycYu3yCCg5t9kbQAAAQ8AAAAHc3NoLXJzYQAAAQCcCiVU',
+                'yZj6+MpeGmTCKNhK+2tPfXw6eIBNJA4PlXiheW2c62FPEeIdyYbdlBskdflMKb41yHNee7',
+                'wcUzsjCwl2DH4rWdho80WD9yFSMygUn8j/L3p/MLZEwGwiWpyU6ZIkTvF5gciwXAkTupcK',
+                '0m2Tm/obo8gR6mwkAaovtaChp2qQOPMYmwCpdW3wtZqx733KJs+Nhg85TWlRHoGCxp+L/A',
+                'x5oD3JZUTXVwy9B5Ihqe4+Lv8N19tsI+F9nuWmCCE+lsNpfAOf8WMn39DFnOJDeMRc2sXR',
+                'EW/SkckcWgzwNSwx0JniWWQfjDD1EfRZGTN8Q8J7Rg3Pr1kN666W72kz'
+            ].join(''));
+        });
+    });
 });
