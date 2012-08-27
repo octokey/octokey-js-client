@@ -3,12 +3,14 @@
   "name": "Octokey",
   "version": "0.1",
   "description": "Secure key-based authentication for the web.",
+  "web_accessible_resources":["intent.html"],
   "permissions": ["<all_urls>"],
   "page_action": {
     "default_icon": "images/cartoon_octopus.png",
     "default_title": "Octokey!",
     "default_popup": "page_action/index.html"
   },
+  "options_page": "options.html",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -42,4 +44,13 @@
                 "js/private_key.js",
                 "background_page.js"]
   }
+/*  "intents": {
+    "http://octokey.com/login": [{
+      "href": "/extent.html",
+      "title": "Login with Octokey",
+      "disposition": "inline",
+      "type": ["text/x-octokey-challenge"]
+    }]
+  }
+*/
 }

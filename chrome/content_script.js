@@ -1,6 +1,52 @@
 /*global alert*/
 (function () {
 
+    var passphrase_dialog = (function () {
+        var _public = {}, node = null;
+
+        _public.show = function () {
+            if (node) {
+                return;
+            }
+
+            var url = chrome.extension.getURL("/intent.html");
+            node = jQuery('<iframe style="top: 0; left: 0; width: 100%; height: 100%; position: fixed;" src="' + url + '">');
+            node.appendTo('body');
+        };
+
+        _public.hide = function () {
+            node.detach();
+            node = null;
+        };
+
+        return _public;
+    }()),
+        octokey_forms = jQuery('form.octokey');
+
+    function actionHandler(request, sender, sendResponse) {
+        var _public = {};
+
+        _public.show_intent = passphrase_dialog.show;
+        _public.hide_intent = passphrase_dialog.hide;
+
+        return _public;
+    }
+
+    chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
+
+        var handler = actionHandler(request, sender, sendResponse);
+        try {
+            if (handler[request.message]) {
+                handler[request.message]();
+            } else {
+                throw "Got unknown message: " + JSON.stringify(request);
+            }
+        } catch (e) {
+            sendResponse({error: e.toString()});
+        }
+
+    });
+
     function sendRequest(request, callback) {
         chrome.extension.sendRequest(request, function (response) {
             if (response.error) {
@@ -10,8 +56,6 @@
             }
         });
     }
-
-    var octokey_forms = jQuery('form.octokey');
 
     if (octokey_forms.length) {
         sendRequest({message: 'show_page_action'});
@@ -75,7 +119,7 @@
                             div.remove();
                         });
                     } else {
-                        alert('got unexpected response: ' + JSON.stringify(response));
+                        //alert('got unexpected response: ' + JSON.stringify(response));
 
                     }
                 });

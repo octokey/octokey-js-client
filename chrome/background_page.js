@@ -24,6 +24,8 @@ var challenge_cache = challengeCache();
 
 var pusher = new Pusher("427a8908c6541ab6f357");
 var channel = pusher.subscribe('remote-response');
+var open_intent = null;
+var private_key;
 
 function actionHandler(request, sender, sendResponse) {
 
@@ -37,10 +39,25 @@ function actionHandler(request, sender, sendResponse) {
     }
 
     function privateKey() {
-        if (!localStorage['private-key']) {
-            throw "No private key set. Please click on the Octokey icon";
+        if (!private_key) {
+            private_key = octokey.privateKey(localStorage['private-key']);
         }
-        return octokey.privateKey(localStorage['private-key']);
+        return private_key;
+    }
+
+    function openIntent() {
+        if (open_intent) {
+            open_intent.reject();
+        }
+        chrome.tabs.sendMessage(sender.tab.id, {
+            message: 'show_intent'
+        });
+        open_intent = jQuery.Deferred().always(function () {
+            chrome.tabs.sendMessage(sender.tab.id, {
+                message: 'hide_intent'
+            });
+        });
+        return open_intent;
     }
 
     _public.show_page_action = function () {
@@ -52,31 +69,38 @@ function actionHandler(request, sender, sendResponse) {
     };
 
     _public.create_auth_request = function () {
-        challenge_cache.get(challengeUrl()).then(function (challenge) {
+        if (privateKey().passphrase_required) {
+            openIntent().then(_public.create_auth_request);
+        } else {
+            challenge_cache.get(challengeUrl()).then(function (challenge) {
 
-            // random 5-digit number.
-            var handshake_id = Math.floor(Math.random() * 90000) + 10000,
-                to_sign = {
-                    username: request.username,
-                    challenge: challenge,
-                    request_url: sender.tab.url
-                };
+                try {
+                    var auth_request = octokey.authRequest({
+                            username: request.username,
+                            challenge: challenge,
+                            request_url: sender.tab.url
+                        });
 
-            try {
-                if (request.username === 'bruce@test.linkedin.com') {
-                    jQuery.post("https://octokey.herokuapp.com/local/" + handshake_id, to_sign);
-                    sendResponse({
-                        handshake_id: handshake_id
-                    });
-                } else {
-                    sendResponse({
-                        auth_request: privateKey().authRequest64(to_sign)
-                    });
+                    if (!auth_request.sign(privateKey())) {
+                        throw "Could not sign auth request...";
+                    } else {
+                        sendResponse({
+                            auth_request: auth_request.toBase64()
+                        });
+                    }
+                } catch (e) {
+                    sendResponse({error: e.toString()});
                 }
-            } catch (e) {
-                sendResponse({error: e.toString()});
-            }
-        });
+            });
+        }
+    };
+
+    _public.login_from_intent = function () {
+        if (privateKey().setPassphrase(request.passphrase)) {
+            open_intent.resolve();
+        } else {
+            sendResponse({error: "incorrect passphrase"});
+        }
     };
 
     _public.await_handshake = function () {
@@ -96,16 +120,15 @@ function actionHandler(request, sender, sendResponse) {
 
     _public.set_private_key = function () {
 
-        try {
-            octokey.privateKey(request.private_key);
-        } catch (e) {
-            sendResponse({error: e.toString()});
-            return;
+        var conversion = octokey.privateKey.convert(request.private_key, request.current_passphrase, request.new_passphrase);
+
+        if (conversion.errors) {
+            sendResponse({error: conversion.errors.join("\n")});
+        } else {
+            localStorage['private-key'] = conversion.pem;
+            sendResponse({ok: true});
         }
 
-        localStorage['private-key'] = request.private_key;
-
-        sendResponse({ok: true});
     };
 
     return _public;
