@@ -11,7 +11,7 @@
         });
     }
 
-    var octokey_forms = jQuery('form.ajax-form');
+    var octokey_forms = jQuery('form.octokey');
 
     if (octokey_forms.length) {
         sendRequest({message: 'show_page_action'});
@@ -20,9 +20,9 @@
             var form = $(this),
                 challenge_url = form.find('.octokey-challenge-url').val();
 
-            form.find('input[name=session_key]').change(function (e) {
-                var username  = form.find('input[name=session_key]'),
-                    auth_request = form.find('input[name=session_password]');
+            form.submit(function (e) {
+                var username  = form.find('input.octokey-username'),
+                    auth_request = form.find('input.octokey-auth-request');
 
                 if (!username.val()) {
                     return;

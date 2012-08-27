@@ -30,11 +30,10 @@ function actionHandler(request, sender, sendResponse) {
     var _public = {};
 
     function challengeUrl() {
-        return "https://octokey.herokuapp.com/challenge";
-        // return jQuery.absolutify(request.challenge_url, {
-        //     relative_to: sender.tab.url,
-        //     enforce_same_origin: true
-        // });
+        return jQuery.absolutify(request.challenge_url, {
+            relative_to: sender.tab.url,
+            enforce_same_origin: true
+        });
     }
 
     function privateKey() {
