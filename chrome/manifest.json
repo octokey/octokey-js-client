@@ -28,7 +28,18 @@
                 "js/forge/rsa.js",
                 "js/forge/sha1.js",
                 "js/forge/pki.js",
-                "js/octokey-auth.js",
+                "js/forge/md5.js",
+                "js/forge/aes.js",
+                "js/forge/des.js",
+                "js/forge/hmac.js",
+                "js/forge/pbkdf2.js",
+                "js/forge/prng.js",
+                "js/forge/random.js",
+
+                "js/auth_request.js",
+                "js/buffer.js",
+                "js/public_key.js",
+                "js/private_key.js",
                 "background_page.js"]
   }
 }
