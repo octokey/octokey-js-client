@@ -85,7 +85,141 @@ size_t append_bignum(unsigned char *dst, const BIGNUM *value, size_t maxlen) {
     return append_bytes(dst, bytes + offset, length - offset);
 }
 
+int rsa_private_encrypt(int flen, const unsigned char *from,
+                        unsigned char *to, RSA *rsa, int padding) {
 
+
+    BIGNUM *f, *ret, *res, *ret1, *ret2;
+    int i,j,k,num=0,r= -1;
+    unsigned char *buf=NULL;
+    BN_CTX *ctx=NULL;
+
+    if ((ctx=BN_CTX_new()) == NULL) goto err;
+    BN_CTX_start(ctx);
+    f   = BN_CTX_get(ctx);
+    ret = BN_CTX_get(ctx);
+    ret1 = BN_CTX_get(ctx);
+    ret2 = BN_CTX_get(ctx);
+    num = BN_num_bytes(rsa->n);
+    buf = OPENSSL_malloc(num);
+
+    if (!f || !ret || !buf) {
+        printf("ERR_R_MALLOC_FAILURE");
+        exit(1);
+    }
+
+    i = RSA_padding_add_PKCS1_type_1(buf,num,from,flen);
+    if (i <= 0) goto err;
+
+    if (BN_bin2bn(buf,num,f) == NULL) goto err;
+
+    if (BN_ucmp(f, rsa->n) >= 0) {
+        /* usually the padding functions would catch this */
+        printf("RSA_R_DATA_TOO_LARGE_FOR_MODULUS");
+        exit(1);
+    }
+
+    BIGNUM local_d1, local_d2;
+    BIGNUM *d1 = NULL, *d2 = NULL;
+
+
+    BN_init(&local_d1);
+    BN_init(&local_d2);
+    d1 = &local_d1;
+    d2 = &local_d2;
+
+    BN_rand_range(d1, rsa->d);
+    BN_sub(d2, rsa->d, d1);
+
+
+    // TODO: is this NULL a security/performance problem?
+    // need to figure out what happens if rsa->flags & RSA_FLAG_CACHE_PUBLIC
+    // w.r.t. rsa->_method_mod_n
+    // TODO: re-instate CONST TIME flags and/or blinding.
+    if (!BN_mod_exp_mont(ret1, f, d1, rsa->n, ctx, NULL)) goto err;
+
+    if (!BN_mod_exp_mont(ret2, f, d2, rsa->n, ctx, NULL)) goto err;
+
+    if (!BN_mod_mul(ret, ret1, ret2, rsa->n, ctx)) goto err;
+
+    res = ret;
+
+    /* put in leading 0 bytes if the number is less than the
+     * length of the modulus */
+    j=BN_num_bytes(res);
+    i=BN_bn2bin(res,&(to[num-j]));
+    for (k=0; k<(num-i); k++)
+            to[k]=0;
+
+    r=num;
+err:
+    if (ctx != NULL) {
+        BN_CTX_end(ctx);
+        BN_CTX_free(ctx);
+    }
+    if (buf != NULL) {
+        OPENSSL_cleanse(buf,num);
+        OPENSSL_free(buf);
+    }
+    return(r);
+}
+
+// Inlined from RSA_sign
+int rsa_sign(int type, const unsigned char *m, unsigned int m_len,
+             unsigned char *sigret, unsigned int *siglen, RSA *rsa) {
+
+    X509_SIG sig;
+    ASN1_TYPE parameter;
+    int i,j,ret=1;
+    unsigned char *p, *tmps = NULL;
+    const unsigned char *s = NULL;
+    X509_ALGOR algor;
+    ASN1_OCTET_STRING digest;
+
+    sig.algor= &algor;
+    sig.algor->algorithm=OBJ_nid2obj(type);
+    if (sig.algor->algorithm == NULL) {
+        printf("RSA_R_UNKNOWN_ALGORITHM_TYPE\n");
+        exit(1);
+    }
+    if (sig.algor->algorithm->length == 0) {
+        printf("RSA_R_THE_ASN1_OBJECT_IDENTIFIER_IS_NOT_KNOWN_FOR_THIS_MD\n");
+        exit(1);
+    }
+    parameter.type=V_ASN1_NULL;
+    parameter.value.ptr=NULL;
+    sig.algor->parameter= &parameter;
+
+    sig.digest= &digest;
+    sig.digest->data=(unsigned char *)m; /* TMP UGLY CAST */
+    sig.digest->length=m_len;
+
+    i=i2d_X509_SIG(&sig,NULL);
+    j=RSA_size(rsa);
+    if (i > (j-RSA_PKCS1_PADDING_SIZE)) {
+        printf("RSA_R_DIGEST_TOO_BIG_FOR_RSA_KEY");
+        exit(1);
+    }
+
+    tmps=(unsigned char *)OPENSSL_malloc((unsigned int)j+1);
+    if (tmps == NULL) {
+        printf("ERR_R_MALLOC_FAILURE");
+        return(0);
+    }
+    p=tmps;
+    i2d_X509_SIG(&sig,&p);
+    s=tmps;
+
+    i=rsa_private_encrypt(i,s,sigret,rsa,RSA_PKCS1_PADDING);
+    if (i <= 0)
+        ret=0;
+    else
+        *siglen=i;
+
+    OPENSSL_cleanse(tmps,(unsigned int)j+1);
+    OPENSSL_free(tmps);
+    return(ret);
+}
 /* RSASSA-PKCS1-v1_5 (PKCS #1 v2.0 signature) with SHA1, based on OpenSSH.
  * Note from RFC3447:
  * Although no attacks are known against RSASSA-PKCS1-v1_5, in the interest of
@@ -101,11 +235,13 @@ void ssh_rsa_sign(const EVP_PKEY *key, unsigned char *sig_r, unsigned int *len_r
     EVP_DigestUpdate(&md, data, datalen);
     EVP_DigestFinal(&md, digest, &dlen);
 
-    RSA *rsa = EVP_PKEY_get1_RSA(key);
+    RSA *rsa = EVP_PKEY_get1_RSA((EVP_PKEY *)key);
     unsigned int slen = RSA_size(rsa);
 
-    if (RSA_sign(NID_sha1, digest, dlen, sig, &len, rsa) != 1) {
-        fprintf(stderr, "RSA_sign failed: %s\n", ERR_error_string(ERR_get_error(), NULL));
+    if (rsa_sign(NID_sha1, digest, dlen, sig, &len, rsa) != 1) {
+        char errbuf[8096];
+        ERR_error_string_n(ERR_get_error(), errbuf, 8096);
+        fprintf(stderr, "RSA_sign failed: %s\n", errbuf);
         exit(1);
     }
     if (len < slen) {
